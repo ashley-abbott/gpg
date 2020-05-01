@@ -106,6 +106,8 @@ end
 action :import do
   execute 'gpg2: import key' do
     command "#{gpg_cmd} --import #{new_resource.key_file}"
+    user new_resource.user
+    group new_resource.group
     not_if { key_exists(new_resource) }
   end
 end
