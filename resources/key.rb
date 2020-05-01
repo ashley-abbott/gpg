@@ -1,8 +1,9 @@
 property :batch_name, String,
          name_property: true
 
-property :override_default_keyring, [TrueClass, FalseClass],
-         default: false
+property :override_default_keyring, [true, false],
+         default: false,
+         description: 'Set to true if you want to override the pubring_file and secring_file locations.'
 
 property :pubring_file, String
 
@@ -47,10 +48,12 @@ property :key_fingerprint, String
 
 # Only Ubuntu supports the pinetree_mode. And requires it
 property :pinentry_mode, [String, FalseClass],
-default: lazy { node['platform_family'] == 'ubuntu' ? 'loopback' : false }
+default: lazy { platform?('ubuntu') ? 'loopback' : false },
+description: 'Pinentry mode. Set to loopback on Ubuntu and False (off) for all other platforms.'
 
-property :batch, [TrueClass, FalseClass],
-default: true
+property :batch, [true, false],
+default: true,
+description: 'Turn batch mode on or off when genrating keys'
 
 action :generate do
   unless key_exists(new_resource)
@@ -65,14 +68,15 @@ action :generate do
     end
 
     file new_resource.batch_config_file do
-      content <<-EOS
-Key-Type: #{new_resource.key_type}
-Key-Length: #{new_resource.key_length}
-Name-Real: #{new_resource.name_real}
-Name-Comment: #{new_resource.name_comment}
-Name-Email: #{new_resource.name_email}
-Expire-Date: #{new_resource.expire_date}
-EOS
+      content <<~EOS
+        Key-Type: #{new_resource.key_type}
+        Key-Length: #{new_resource.key_length}
+        Name-Real: #{new_resource.name_real}
+        Name-Comment: #{new_resource.name_comment}
+        Name-Email: #{new_resource.name_email}
+        Expire-Date: #{new_resource.expire_date}
+      EOS
+
       if new_resource.override_default_keyring
         content << "%pubring #{new_resource.pubring_file}\n"
         content << "%secring #{new_resource.secring_file}\n"
